@@ -3,7 +3,7 @@ from mesa.time import RandomActivation
 from mesa.space import MultiGrid
 from agent import Pasajero, Construccion, Muro, AccesoEntrada, AccesoSalida, Puerta
 #Importar las constantes de los agentes
-from agent import POSX_ORIGEN, POSX_FINAL, POSY_ORIGEN, POSY_FINAL, CANT_ANDENES, CANT_PUERTAS, CANT_TORNIQU, POSY_MURO_ENTRADA,POSY_MURO_TREN, TIMERABRIR, TIMERCERRAR
+from agent import POSX_ORIGEN, POSX_FINAL, POSY_ORIGEN, POSY_FINAL, CANT_ANDENES, CANT_PUERTAS, CANT_TORNIQU, POSY_MURO_ENTRADA,POSY_MURO_TREN, TIMERABRIR, TIMERCERRAR, LISTA_ESTACIONES
 
 import math 
 import time
@@ -15,6 +15,7 @@ P_ENTRANDO_ESTACION = 10
 MIN_P_CARRO = 30 
 #Cantidad máxima de pasajeros que llegan dentro del carro
 MAN_P_CARRO = 50 
+
 
 
 class miModelo(Model):
@@ -36,6 +37,7 @@ class miModelo(Model):
         self.pasajerosEntraronCarro = 0 #contador para pasajeros que entran a accesos
         self.pasajerosSalieronCarro = 0 #contador para pasajeros que entran a accesos
         #self.timer = TIMERABIERTO
+        
 
         # Dibujar limites
         dibujarAccesos(self) 

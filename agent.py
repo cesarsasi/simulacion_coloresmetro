@@ -2,6 +2,9 @@
 from mesa import Agent
 import math
 
+#Cada estación se compone de [nombre estación, personas iniciales,personas que ingresan por step, color, capacidad estación]
+#Color 0 = Común , 1 = Verde, 2 = Rojo
+LISTA_ESTACIONES = [["Puente Alto",10,15,0,3000],["Las mercedes",10,15,2,3000],["Protectora de la infancia",10,15,1,3000],["Hospital Sotero del Rio",10,15,0,3000],["Elisa Correa",10,15,0,3000],["Los Quillayes",10,15,3,3000],["San José de la Estrella",10,15,2,3000],["Trinidad",10,15,3,3000],["Rojas Magallanes",10,15,2,3000],["Vicente Valdés",10,15,0,3000],["Vicuña Mackenna",10,15,0,3000],["Macul",10,15,0,3000],["Las Torres",10,15,3,3000],["Quilin",10,15,2,3000],["Los Presidentes",10,15,3,3000],["Grecia",10,15,2,3000],["Los Orientales",10,15,3,3000],["Plaza Egaña",10,15,0,3000],["Simón Bolivar",10,15,2,3000],["Principe de Gales",10,15,3,3000],["Francisco Bilbao",10,15,0,3000],["Cristóbal Colón",10,15,2,3000],["Tobalba",10,15,0,3000]]
 POSX_ORIGEN = 0
 POSY_ORIGEN = 0
 POSX_FINAL = 200
@@ -40,9 +43,11 @@ class Muro(Construccion):
 class AccesoEntrada(Construccion):
     def __init__(self, model, pos, transitable):
         super().__init__(model, pos, transitable)
+
 class AccesoSalida(Construccion):
     def __init__(self, model, pos, transitable):
         super().__init__(model, pos, transitable)
+
 class Puerta(Construccion):
     def __init__(self, model, pos, transitable):
         super().__init__( model, pos, transitable)
@@ -54,6 +59,7 @@ class Pasajero(Agent):
         super().__init__(self,model)
         self.pos = pos
         self.direccion = self.set_direction()
+        self.estacionOrigen = 0
         self.pasoAccesoEntrada = False
         self.pasoAccesoSalida = False
         self.salioVagon = False
@@ -195,7 +201,7 @@ class Pasajero(Agent):
                     ListaPuerta = [x for x in ObjetosEnPuerta if type(x) is Puerta]
                     if ListaPuerta[0].cerrada == True:
                         destino = self.pos
-            #En la puerta ingresando al metro
+            #En la puerta ingresando al tren
             elif self.pos[1] <= POSY_MURO_TREN and self.direccion == True: 
                 centroDestino = self.elegirUInterior(self.model, self.pos)
                 destinosPosibles = self.obtenerDestinosPosiblesPuertas(centroDestino)
@@ -221,12 +227,72 @@ class Pasajero(Agent):
                 destino = (0,0)
             self.model.grid.move_agent(self,destino)
 
-class Metro(Agent):
+class Tren(Agent):
     def __init__(self, model, pos):
         super().__init__(self,model)
-        self.pos = pos
-        self.direccion = self.set_direction()
+        self.servicio = True
+        self.capacidadUsuarios = 0
+        self.cantidadUsuarios = 0
         self.colorRuta = 0
-        self.aperturaPuertas = False
-        self.salioEstacion = False
-        self.entroVagon = False
+        self.valorPuerta = False
+        self.direccion = False
+        self.estacionActual = 0
+        self.estacionSiguiente = 0
+        self.estacionObjetivo = 0
+    
+    def step(self):
+        print("Comenzar step Vagon")
+        abrirPuertas(self,pasajerosEntrantes, colorEstacion)
+        avanzarTren(self)
+        
+        
+
+    
+    def abrirPuertas(self, pasajerosEntrantes, colorEstacion):
+        if self.valorPuerta == False and colorEstacion == self.colorRuta and self.servicio == True:  
+            self.valorPuerta = True
+            # Liberar Pasajeros
+
+            # Tomar Pasajaros
+            if self.capacidadUsuarios > self.cantidadUsuarios :
+                capacidadDisponible = self.capacidadUsuarios - self.cantidadUsuarios
+                # Tomar capacidadDisponible usuarios como maximo
+                if pasajerosEntrantes < capacidadDisponible:
+                    self.cantidadUsuarios += pasajerosEntrantes
+                    print ("Tren capta total de pasajeros, tomados : ", pasajerosEntrantes)
+                else:
+                    self.cantidadUsuarios += capacidadDisponible
+                    print ("Tren capta parcialmente pasajeros, abandonados : ", (pasajerosEntrantes-capacidadDisponible) )
+            self.valorPuerta = True
+
+    def cerrarPuertas(self):
+        if self.valorPuerta == True:  self.valorPuerta = False
+
+    def avanzarTren(self, estadoEstacion):
+        if  estadoEstacion == True and self.estacionObjetivo != self.estacionActual and self.servicio == True:  
+            self.estacionActual +=1
+            self.estacionSiguiente +=1
+            print ("Tren transportado")
+        if  estadoEstacion == False:
+            print ("Tren no transportado: Siguiente estacion Ocupada")
+        else:
+            self.servicio = False
+            print ("Tren Liberado")
+    
+
+class Estacion():
+    def __init__(self, model, pos):
+        super().__init__(self,model)
+        self.nombreEstacion = ""
+        self.disponibilidadEstacion  = True
+        self.haytren  = False
+        self.flujoEntrada = 0
+        self.flujoSalida  = 0
+        self.capacidadUsuarios = 0
+        self.cantidadUsuarios = 0
+        self.colorEstacion = 0
+        self.idEstacion=0
+
+    def ()
+
+
