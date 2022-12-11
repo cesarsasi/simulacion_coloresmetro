@@ -5,17 +5,25 @@ import math
 #Cada estación se compone de [nombre estación, personas iniciales,personas que ingresan por step, color, capacidad estación]
 #Color 0 = Común , 1 = Verde, 2 = Rojo
 LISTA_ESTACIONES = [["Puente Alto",10,15,0,3000],["Las mercedes",10,15,2,3000],["Protectora de la infancia",10,15,1,3000],["Hospital Sotero del Rio",10,15,0,3000],["Elisa Correa",10,15,0,3000],["Los Quillayes",10,15,3,3000],["San José de la Estrella",10,15,2,3000],["Trinidad",10,15,3,3000],["Rojas Magallanes",10,15,2,3000],["Vicente Valdés",10,15,0,3000],["Vicuña Mackenna",10,15,0,3000],["Macul",10,15,0,3000],["Las Torres",10,15,3,3000],["Quilin",10,15,2,3000],["Los Presidentes",10,15,3,3000],["Grecia",10,15,2,3000],["Los Orientales",10,15,3,3000],["Plaza Egaña",10,15,0,3000],["Simón Bolivar",10,15,2,3000],["Principe de Gales",10,15,3,3000],["Francisco Bilbao",10,15,0,3000],["Cristóbal Colón",10,15,2,3000],["Tobalba",10,15,0,3000]]
+LARGO_ANDEN = 50
 POSX_ORIGEN = 0
 POSY_ORIGEN = 0
-POSX_FINAL = 200
-POSY_FINAL = 15
+POSY_FINAL  = 20
+POSX_FINAL  = LARGO_ANDEN*len(LISTA_ESTACIONES)
 
-CANT_ANDENES = 4
 CANT_PUERTAS = 4
 CANT_TORNIQU = 3
+CANT_ANDENES = len(LISTA_ESTACIONES)
 
-POSY_MURO_ENTRADA = POSY_FINAL - math.floor(POSY_FINAL * .5)
-POSY_MURO_TREN = POSY_FINAL - math.floor(POSY_FINAL * .8)
+
+POSY_MURO_ENTRADA = POSY_FINAL - int(math.floor(POSY_FINAL * .5))
+POSY_MURO_TREN    = POSY_FINAL - int(math.floor(POSY_FINAL * .8))
+
+POSY_I_TREN = LARGO_ANDEN - 2
+POSY_F_TREN = POSY_FINAL - 1
+
+ANCHO_TREN  = POSY_FINAL - int(math.floor(POSY_FINAL * .8)) -1
+LARGO_TREN  = LARGO_ANDEN - 4
 
 #Pasos en los que se abre la puerta
 TIMERABRIR = 25 
@@ -236,17 +244,28 @@ class Tren(Agent):
         self.colorRuta = 0
         self.valorPuerta = False
         self.direccion = False
+        self.pos = pos
         self.estacionActual = 0
         self.estacionSiguiente = 0
         self.estacionObjetivo = 0
     
     def step(self):
         print("Comenzar step Vagon")
-        abrirPuertas(self,pasajerosEntrantes, colorEstacion)
-        avanzarTren(self)
-        
-        
 
+        #Movimiento
+        desplaNuevaEstacion = self.pos[0]+ LARGO_ANDEN
+        destino = (desplaNuevaEstacion, self.pos[1])
+        
+        # self.pos = destino
+        if destino[0] < POSX_FINAL:
+            print("POS O",self.pos)
+            print("POS D", destino)
+            self.model.grid.move_agent(self,destino)
+        else: 
+            print("Tren llego al final")
+
+        # abrirPuertas(self,pasajerosEntrantes, colorEstacion)
+        # avanzarTren(self)
     
     def abrirPuertas(self, pasajerosEntrantes, colorEstacion):
         if self.valorPuerta == False and colorEstacion == self.colorRuta and self.servicio == True:  
@@ -292,7 +311,5 @@ class Estacion():
         self.cantidadUsuarios = 0
         self.colorEstacion = 0
         self.idEstacion=0
-
-    def ()
 
 

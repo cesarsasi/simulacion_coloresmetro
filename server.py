@@ -3,8 +3,8 @@ from mesa.visualization.ModularVisualization import ModularServer #server
 from mesa.visualization.modules import ChartModule
 from mesa.visualization.UserParam import UserSettableParameter
 from model import miModelo #our model
-from agent import Pasajero, Muro, AccesoEntrada, AccesoSalida, Puerta
-from agent import POSX_FINAL, POSY_FINAL
+from agent import Pasajero, Muro, AccesoEntrada, AccesoSalida, Puerta, Tren
+from agent import POSX_FINAL, POSY_FINAL, ANCHO_TREN, LARGO_TREN
 
 N_PASAJEROS_INICIALES = 1000
 def agent_portrayal(agent): 
@@ -57,8 +57,16 @@ def agent_portrayal(agent):
         portrayal["Color"] = "yellow"
         portrayal["w"] = 1
         portrayal["h"] = 1
+    elif type(agent) is Tren:
+        portrayal["Layer"] = 1
+        portrayal["Shape"] = "rect"
+        portrayal["Filled"] = "true"
+        portrayal["Color"] = "blue"
+        portrayal["w"] = LARGO_TREN
+        portrayal["h"] = ANCHO_TREN
     return portrayal
-grid = CanvasGrid(agent_portrayal,POSX_FINAL,POSY_FINAL,1000,500)
+# dibujarMuro(modelo, POSX_ORIGEN, POSX_FINAL, POSY_MURO_TREN, POSY_MURO_TREN)    
+grid = CanvasGrid(agent_portrayal,POSX_FINAL,POSY_FINAL,POSX_FINAL*10,POSY_FINAL*10)
 #chart = ChartModule([{"Label":"Nagentes","Color":"red"}],data_collector_name="datacollector")
 
 server = ModularServer(miModelo,
