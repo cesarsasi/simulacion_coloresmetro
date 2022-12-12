@@ -4,7 +4,8 @@ import math
 
 #Cada estación se compone de [nombre estación, personas iniciales,personas que ingresan por step, color, capacidad estación]
 #Color 0 = Común , 1 = Verde, 2 = Rojo
-LISTA_ESTACIONES = [["Puente Alto",10,15,0,3000],["Las mercedes",10,15,2,3000],["Protectora de la infancia",10,15,1,3000],["Hospital Sotero del Rio",10,15,0,3000],["Elisa Correa",10,15,0,3000],["Los Quillayes",10,15,3,3000],["San José de la Estrella",10,15,2,3000],["Trinidad",10,15,3,3000],["Rojas Magallanes",10,15,2,3000],["Vicente Valdés",10,15,0,3000],["Vicuña Mackenna",10,15,0,3000],["Macul",10,15,0,3000],["Las Torres",10,15,3,3000],["Quilin",10,15,2,3000],["Los Presidentes",10,15,3,3000],["Grecia",10,15,2,3000],["Los Orientales",10,15,3,3000],["Plaza Egaña",10,15,0,3000],["Simón Bolivar",10,15,2,3000],["Principe de Gales",10,15,3,3000],["Francisco Bilbao",10,15,0,3000],["Cristóbal Colón",10,15,2,3000],["Tobalba",10,15,0,3000]]
+#Aolor 2 = Común , 1 = Verde, 0 = Rojo
+LISTA_ESTACIONES = [["Puente Alto",10,15,2,3000],["Las mercedes",10,15,0,3000],["Protectora de la infancia",10,15,1,3000],["Hospital Sotero del Rio",10,15,2,3000],["Elisa Correa",10,15,2,3000],["Los Quillayes",10,15,1,3000],["San José de la Estrella",10,15,0,3000],["Trinidad",10,15,1,3000],["Rojas Magallanes",10,15,0,3000],["Vicente Valdés",10,15,2,3000],["Vicuña Mackenna",10,15,2,3000],["Macul",10,15,2,3000],["Las Torres",10,15,1,3000],["Quilin",10,15,0,3000],["Los Presidentes",10,15,1,3000],["Grecia",10,15,0,3000],["Los Orientales",10,15,1,3000],["Plaza Egaña",10,15,2,3000],["Simón Bolivar",10,15,0,3000],["Principe de Gales",10,15,1,3000],["Francisco Bilbao",10,15,2,3000],["Cristóbal Colón",10,15,0,3000],["Tobalba",10,15,2,3000]]
 LARGO_ANDEN = 50
 POSX_ORIGEN = 0
 POSY_ORIGEN = 0
@@ -26,9 +27,9 @@ ANCHO_TREN  = POSY_FINAL - int(math.floor(POSY_FINAL * .8)) -1
 LARGO_TREN  = LARGO_ANDEN - 4
 
 #Pasos en los que se abre la puerta
-TIMERABRIR = 25 
+TIMERABRIR = 2
 #Pasos en los que se cierra la puerta
-TIMERCERRAR = 20 
+TIMERCERRAR = 10
 
 CANT_P_PUERTACARRO = 5
 CANT_P_TORNIQUETE = 1
@@ -61,6 +62,8 @@ class Puerta(Construccion):
         super().__init__( model, pos, transitable)
         self.cerrada = True
         self.contador = 0
+    def get_pos(self):
+        return self.pos
 
 class Pasajero(Agent):
     def __init__(self, model, pos):
@@ -75,6 +78,8 @@ class Pasajero(Agent):
 
     def get_position(self):
         return self.pos
+    def set_position(self, pos):
+        self.pos = pos
     
     def set_direction(self):
         if self.pos[1] < POSY_MURO_TREN:
@@ -89,9 +94,10 @@ class Pasajero(Agent):
     # Direccion Puertas
     def elegirPuerta(self,modelo, posPasajero):
         distancias = []
-        puertas = modelo.getPuertas()
+        indicePuertas  = math.floor(posPasajero[0]/LARGO_ANDEN)
+        puertas = modelo.getPuertas(indicePuertas)
         for puerta in puertas:
-            distancias.append( math.pow( posPasajero[0] - puerta[0], 2) + math.pow(posPasajero[1] - puerta[1], 2) )
+            distancias.append( math.pow( posPasajero[0] - puerta.get_pos()[0], 2) + math.pow(posPasajero[1] - puerta.get_pos()[1], 2) )
         return puertas[ distancias.index(min(distancias)) ] 
 
     # Direccion accesos
@@ -132,9 +138,12 @@ class Pasajero(Agent):
         return destinosPosibles
 
     def obtenerDestino(self, destinosPosibles, accesoDestino):
-        distancias = [] 
+        distancias = []
         for destinoSiguiente in destinosPosibles:
-             distancias.append( math.pow( destinoSiguiente[0] - accesoDestino[0], 2) + math.pow(destinoSiguiente[1] - accesoDestino[1], 2) )
+            if type(accesoDestino) is Puerta:
+                distancias.append( math.pow( destinoSiguiente[0] - accesoDestino.get_pos()[0], 2) + math.pow(destinoSiguiente[1] - accesoDestino.get_pos()[1], 2) )
+            else:
+                distancias.append( math.pow( destinoSiguiente[0] - accesoDestino[0], 2) + math.pow(destinoSiguiente[1] - accesoDestino[1], 2) )
         return destinosPosibles[ distancias.index(min(distancias)) ]
 
     def obtenerDestinosPosiblesPuertas(self,puertaDestino):
@@ -150,6 +159,7 @@ class Pasajero(Agent):
                     destinosPosibles.append(vecino)
                     if len(obstaculos) > 0:
                         destinosPosibles.remove(vecino)
+
             if puertaDestino in destinosPosibles:
                 ObjetosEnPuerta = self.model.grid.get_neighbors(puertaDestino,moore=True, include_center=True,radius=0)
                 PasajerosEnPuerta = [x for x in ObjetosEnPuerta if type(x) is Pasajero and x!=self]
@@ -171,12 +181,14 @@ class Pasajero(Agent):
 
     # En cada step
     def step(self):
-        if self.pos in self.model.posPuertas and self.direccion and not self.entroVagon:
+        id_anden = math.floor(self.pos[0]/LARGO_ANDEN)
+        # print("IDANDEN", id_anden) 
+        if self.pos in self.model.posPuertas[id_anden] and self.direccion and not self.entroVagon:
             self.entroVagon = True
-            self.model.pasajerosEntraronCarro+=1
-        elif self.pos in self.model.posPuertas and not self.direccion and not self.salioVagon:
+            # self.model.pasajerosEntraronTren+=1
+        elif self.pos in self.model.posPuertas[id_anden] and not self.direccion and not self.salioVagon:
             self.salioVagon = True
-            self.model.pasajerosSalieronCarro+=1
+            # self.model.pasajerosSalieronTren+=1
         elif self.pos in self.model.posAccesosEntrada and self.direccion and not self.pasoAccesoEntrada:
             self.pasoAccesoEntrada = True
             self.model.pasajerosEntraronAccesos+=1
@@ -186,12 +198,12 @@ class Pasajero(Agent):
         if self.pos[0] == POSX_ORIGEN or self.pos[0] == POSX_FINAL -1  or self.pos[1] == POSY_ORIGEN or self.pos[1] == POSY_FINAL -1:
             self.model.schedule.remove(self)
             self.model.grid.remove_agent(self)
-        elif self.model.contador == TIMERCERRAR -1 and self.pos[1] < POSY_MURO_TREN +1 and not self.model.puertas[0].cerrada:
-            self.model.schedule.remove(self)
-            self.model.grid.remove_agent(self)
-        elif self.model.contador == TIMERCERRAR -1 and self.pos[1] == POSY_MURO_TREN +1 and not self.model.puertas[0].cerrada and self.direccion:
-            self.model.schedule.remove(self)
-            self.model.grid.remove_agent(self)
+        # elif self.model.contador == TIMERCERRAR -1 and self.pos[1] < POSY_MURO_TREN +1 and not self.model.puertas[id_anden][0].cerrada:
+        #     self.model.schedule.remove(self)
+        #     self.model.grid.remove_agent(self)
+        # elif self.model.contador == TIMERCERRAR -1 and self.pos[1] == POSY_MURO_TREN +1 and self.direccion and not self.model.puertas[id_anden][0].cerrada:
+        #     self.model.schedule.remove(self)
+        #     self.model.grid.remove_agent(self)
             
         else:
             #Fuera de los accesos
@@ -201,10 +213,11 @@ class Pasajero(Agent):
                 destino = self.obtenerDestino(destinosPosibles,accesoDestino)
             #Dentro de la estacion direccion puerta
             elif self.pos[1] <= POSY_MURO_ENTRADA and self.pos[1] > POSY_MURO_TREN and self.direccion == True: 
-                PuertaDestino = self.elegirPuerta(self.model, self.pos)
-                destinosPosibles = self.obtenerDestinosPosiblesPuertas(PuertaDestino)
-                destino = self.obtenerDestino(destinosPosibles,PuertaDestino)
-                if PuertaDestino == destino:
+                puertaDestino = self.elegirPuerta(self.model, self.pos)
+                destinosPosibles = self.obtenerDestinosPosiblesPuertas(puertaDestino)
+                destino = self.obtenerDestino(destinosPosibles,puertaDestino)
+                
+                if puertaDestino == destino:
                     ObjetosEnPuerta = self.model.grid.get_neighbors(destino,moore=True, include_center=True,radius=0)
                     ListaPuerta = [x for x in ObjetosEnPuerta if type(x) is Puerta]
                     if ListaPuerta[0].cerrada == True:
@@ -214,12 +227,13 @@ class Pasajero(Agent):
                 centroDestino = self.elegirUInterior(self.model, self.pos)
                 destinosPosibles = self.obtenerDestinosPosiblesPuertas(centroDestino)
                 destino = self.obtenerDestino(destinosPosibles,centroDestino)
+                
             #En el tren y van a salir
             elif self.pos[1] < POSY_MURO_TREN and self.direccion == False:
-                PuertaDestino = self.elegirPuerta(self.model, self.pos)
-                destinosPosibles = self.obtenerDestinosPosiblesPuertas(PuertaDestino)
-                destino = self.obtenerDestino(destinosPosibles,PuertaDestino)
-                if PuertaDestino == destino:
+                puertaDestino = self.elegirPuerta(self.model, self.pos)
+                destinosPosibles = self.obtenerDestinosPosiblesPuertas(puertaDestino)
+                destino = self.obtenerDestino(destinosPosibles,puertaDestino)
+                if puertaDestino == destino:
                     ObjetosEnPuerta = self.model.grid.get_neighbors(destino,moore=True, include_center=True,radius=0)
                     ListaPuerta = [x for x in ObjetosEnPuerta if type(x) is Puerta]
                     if ListaPuerta[0].cerrada == True:
@@ -233,39 +247,115 @@ class Pasajero(Agent):
                 destino = (self.pos[0] , self.pos[1] +1)
             else:
                 destino = (0,0)
-            self.model.grid.move_agent(self,destino)
+            puertas_r = self.model.puertas[id_anden]
+            check = [x for x in puertas_r if x.get_pos() == destino and x.cerrada]
+            if check == []:
+                self.model.grid.move_agent(self,destino)
 
 class Tren(Agent):
-    def __init__(self, model, pos):
+    def __init__(self, model, pos, id, colorRuta):
         super().__init__(self,model)
         self.servicio = True
         self.capacidadUsuarios = 0
         self.cantidadUsuarios = 0
-        self.colorRuta = 0
+        self.colorRuta = colorRuta
+        self.pasajeros = []
         self.valorPuerta = False
         self.direccion = False
         self.pos = pos
         self.estacionActual = 0
         self.estacionSiguiente = 0
         self.estacionObjetivo = 0
+        self.contador = 0
+        self.id = id
     
     def step(self):
-        print("Comenzar step Vagon")
+        print("T",self.id,": Vagon ID  : ", self.id)
+        print("T",self.id,": Posicion  : ", self.pos)
+        self.contador +=1
+        anden  = math.floor(self.pos[0]/LARGO_ANDEN)
+        puertas = self.model.puertas[anden]
+        print("Puertas", anden)
 
-        #Movimiento
-        desplaNuevaEstacion = self.pos[0]+ LARGO_ANDEN
-        destino = (desplaNuevaEstacion, self.pos[1])
-        
-        # self.pos = destino
-        if destino[0] < POSX_FINAL:
-            print("POS O",self.pos)
-            print("POS D", destino)
-            self.model.grid.move_agent(self,destino)
-        else: 
-            print("Tren llego al final")
+        #Abrir Puertas Tomar pasajeros
+        if(self.contador == TIMERABRIR) and (LISTA_ESTACIONES[anden][3]%2) == self.colorRuta: #and la estacion es la suya
+            # print("T",self.id,": OpenDoor  : ",anden)
+            for puerta_o in puertas:
+                # print("T",self.id,": O<nDoor  : ",puerta_o.pos)
+                puerta_o.cerrada =  False
+            # for mod in self.model.puertas:
+            #     for pu in mod:
+            #         print("X", pu.cerrada)
+            
+
+        # Cerrar Puertas
+        elif self.contador == TIMERCERRAR:
+            print("T",self.id,": CloseDoor : ",anden)
+            for puerta_c in puertas:
+                puerta_c.cerrada =  True
+            # for mod in self.model.puertas:
+            #     for pu in mod:
+            #         print("X", pu.cerrada)
+
+            #Captar pasajeros
+            self.pasajeros = self.obtenerPasajerosEnRango((self.pos[0]+2-50),(self.pos[0]+2), POSY_MURO_TREN,POSY_MURO_ENTRADA)
+            print("T",self.id,": Pasajeros : ",len(self.pasajeros))
+            print("T",self.id,": limpieza  : ", (self.pos[0]+2-50) , (self.pos[0]+2))
+
+            #Mover tren
+            desplaNuevaEstacion = self.pos[0] + LARGO_ANDEN
+            destino = (desplaNuevaEstacion, self.pos[1])
+            ocup_andensiguiente = self.model.grid.get_neighbors( destino,moore=True, include_center=True,radius=0)
+            tren_andensiguiente = [x for x in ocup_andensiguiente if type(x) is Tren]
+            print(tren_andensiguiente)
+
+            # verificar que no haya tren en el siguiente paso
+            if destino[0] < POSX_FINAL and len(tren_andensiguiente) == 0 : 
+                # Remover tren y pasajeros de la grilla
+                total = self.moverPasajerosEnRango((self.pos[0]-LARGO_ANDEN+2), (self.pos[0]+2), 0, POSY_MURO_ENTRADA)
+                print("LEER x0: ",(self.pos[0]-LARGO_ANDEN+2),"x1: ",(self.pos[0]+2),"y0: ",POSY_MURO_TREN,"y1: ",POSY_MURO_ENTRADA)
+                self.model.grid.move_agent(self,destino)
+                print("T",self.id,": cantidad  : ",len(total))
+            else: 
+                print("T",self.id,": Fin Viaje . ")
+    
+            self.contador = 0 
 
         # abrirPuertas(self,pasajerosEntrantes, colorEstacion)
         # avanzarTren(self)
+
+    def obtenerPasajerosEnRango(self,xinicial,xfinal, yinicial,yfinal):
+        totalPasajeros = []
+        for x in range(xinicial,xfinal + 1):
+            for y in range(yinicial,yfinal):
+                pos = (x,y)
+                pasajeros = self.model.grid.get_neighbors( pos,moore=True, include_center=True,radius=0)
+                pasajeros = [x for x in pasajeros if type(x) is Pasajero and x.direccion == True]
+                self.pasajeros += pasajeros
+                if len(pasajeros) > 0:
+                    totalPasajeros = totalPasajeros + pasajeros
+        return totalPasajeros
+    
+    def moverPasajerosEnRango(self,xinicial, xfinal, yinicial, yfinal):
+        totalPasajeros = []
+        for x in range(xinicial,xfinal + 1):
+            for y in range(yinicial,yfinal):
+                pos = (x,y)
+                pasajeros = self.model.grid.get_neighbors( pos,moore=True, include_center=True,radius=0)
+                pasajeros = [x for x in pasajeros if type(x) is Pasajero]
+                
+                for pa in pasajeros:
+                    # print("PI",pa.get_position())
+                    x_dp = (pa.get_position()[0]+LARGO_ANDEN)
+                    y_dp = pa.get_position()[1]
+                    destino_p = (x_dp, y_dp)
+                    # print("PF",destino_p)
+                    self.model.grid.move_agent(pa,destino_p)
+                    # pa.set_position(destino_p)
+                    # print("PR",pa.get_position()) 
+                if len(pasajeros) > 0:
+                    totalPasajeros = totalPasajeros + pasajeros
+        return totalPasajeros
     
     def abrirPuertas(self, pasajerosEntrantes, colorEstacion):
         if self.valorPuerta == False and colorEstacion == self.colorRuta and self.servicio == True:  

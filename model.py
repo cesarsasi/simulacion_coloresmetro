@@ -3,7 +3,7 @@ from mesa.time import RandomActivation
 from mesa.space import MultiGrid
 from agent import Pasajero, Construccion, Muro, AccesoEntrada, AccesoSalida, Puerta, Tren
 #Importar las constantes de los agentes
-from agent import POSX_ORIGEN, POSX_FINAL, POSY_ORIGEN, POSY_FINAL, CANT_ANDENES, CANT_PUERTAS, CANT_TORNIQU, POSY_MURO_ENTRADA,POSY_MURO_TREN, TIMERABRIR, TIMERCERRAR, LISTA_ESTACIONES, POSY_I_TREN
+from agent import POSX_ORIGEN, POSX_FINAL, POSY_ORIGEN, POSY_FINAL, CANT_ANDENES, CANT_PUERTAS, CANT_TORNIQU, POSY_MURO_ENTRADA,POSY_MURO_TREN, TIMERABRIR, TIMERCERRAR, LARGO_ANDEN, POSY_I_TREN
 
 import math 
 import time
@@ -28,6 +28,8 @@ class miModelo(Model):
         self.posAccesosSalida = [] #guarda las posiciones de los torniquites de salida
         self.posPuertas = [] #guarda las posiciones de las puertas
         self.puertas = [] #guarda los objetos puerta
+        self.posTrenes = [] #guarda las posiciones de los trenes
+        self.trenes = [] #guarda los objetos tren
 
         self.posUInteriores = calcularUInteriores() #te calcula todas las posiciones interios del vagón a donde se dirigen los usuarios
         
@@ -36,46 +38,37 @@ class miModelo(Model):
         self.pasajerosSalieronAccesos = 0 #contador para pasajeros que entran a accesos
         self.pasajerosEntraronCarro = 0 #contador para pasajeros que entran a accesos
         self.pasajerosSalieronCarro = 0 #contador para pasajeros que entran a accesos
+        self.colorRuta = 0
         #self.timer = TIMERABIERTO
         
 
         # Dibujar limites
         dibujarAccesos(self) 
         dibujarPuertas(self) 
+        # print("PUERTAS", self.puertas)
         dibujarMuros(self)  
         dibujarPasajeros(self,N_Pasajeros, False)
-        dibujarTren(self,1, False)
+        dibujarTren(self,1)
+        
+        # a = Puerta(self,(1,1))
+        # self.schedule.add(a)
+        # #Dibuja el agente pasajero
+        # self.grid.place_agent(a, a.pos)
 
     def step(self):
         print("Comenzar step")
         self.schedule.step()
+
         dibujarNuevosPasajeros(self,1)
-        # dibujarTren()
-        # N_Pasajeros = self.random.randint(1,12)
+
+        dibujarTren(self,1)
+        
         if self.schedule.get_agent_count()<2:
             self.running = False
         self.contador +=1
         pasajerosAEntrar = []
         pasajerosASalir = []
-        if self.contador == TIMERABRIR and self.puertas[0].cerrada:
-            pasajerosAEntrar = self.obtenerPasajerosEnRango(POSX_ORIGEN,POSX_FINAL, POSY_MURO_TREN,POSY_MURO_ENTRADA)
-            print("PASAJEROS A ENTRAR ", len(pasajerosAEntrar))
-            time.sleep(5)
-            for puerta in self.puertas:
-                puerta.cerrada =  False
-                self.contador = 0
-            #Pasajeros que aparecen en el vagon
-            dibujarPasajeros(self, self.random.randint(MIN_P_CARRO,MAN_P_CARRO), True) 
-        elif self.contador == TIMERCERRAR and not self.puertas[0].cerrada:
-            for puerta in self.puertas:
-                puerta.cerrada =  True
-                self.contador = 0
-        elif self.contador == TIMERCERRAR -1 and not self.puertas[0].cerrada:
-            pasajerosEntraron = self.obtenerPasajerosEnRango(POSX_ORIGEN,POSX_FINAL, POSY_ORIGEN+1,POSY_MURO_TREN)
-            pasajerosNoEntraron = self.obtenerPasajerosEnRango(POSX_ORIGEN,POSX_FINAL, POSY_MURO_TREN,POSY_MURO_ENTRADA)
-            print("PASAJEROS QUE ENTRARON ", len(pasajerosEntraron))
-            print("PASAJEROS QUE NO ENTRARON", len(pasajerosNoEntraron))
-            time.sleep(5)
+
         print("Los pasajeros que han entrado por los accesos son ", self.pasajerosEntraronAccesos)
         print("Los pasajeros que han salido por los accesos son ", self.pasajerosSalieronAccesos)
         print("Los Pasajeros que han entrado al carro son ", self.pasajerosEntraronCarro)
@@ -84,26 +77,15 @@ class miModelo(Model):
 
     def getAccesosEntrada(self):
         return self.posAccesosEntrada
-    def getPuertas(self):
-        return self.posPuertas
+    def getPuertas(self, ind):
+        return self.puertas[ind]
+    def getTrenes(self):
+        return self.posTrenes
     def getUInteriores(self):
         return self.posUInteriores
     def getAccesosSalida(self):
         return self.posAccesosSalida
-
-    def obtenerPasajerosEnRango(self,xinicial,xfinal, yinicial,yfinal):
-        totalPasajeros = []
-        for x in range(xinicial,xfinal + 1):
-            for y in range(yinicial,yfinal):
-                pos = (x,y)
-                pasajeros = self.grid.get_neighbors( pos,moore=True, include_center=True,radius=0)
-                pasajeros = [x for x in pasajeros if type(x) is Pasajero and x.direccion == True]
-                # for pa in pasajeros:
-                    # print(pa.get_position())
-                if len(pasajeros) > 0:
-                    totalPasajeros = totalPasajeros + pasajeros
-        return totalPasajeros
-
+                
 def dibujarMuros(modelo):
     # Extremos
     #Sup, Inf, Izq y Der respectivamente
@@ -177,19 +159,26 @@ def dibujarAcceso(modelo, pos_x,pos_y,EoS):
 def dibujarPuertas(modelo):
     largoAnden = (int)(POSX_FINAL/CANT_ANDENES)
     # Ubicacion de las puertas
+    cont_p = 0
     for anden in range(CANT_ANDENES):
         andenx = (int)((largoAnden)*(anden))
+        modelo.puertas.append([])
+        modelo.posPuertas.append([])
         for puerta in range(CANT_PUERTAS+1):
             if(puerta != 0):
                 xPuerta = (int)(math.floor(largoAnden * ( .2 * (puerta))))
-                dibujarPuerta(modelo,xPuerta + andenx ,POSY_MURO_TREN)
+                #print("CONT P", cont_p)
+                dibujarPuerta(modelo,xPuerta + andenx ,POSY_MURO_TREN, cont_p)
+        cont_p=cont_p+1
+        
 
-def dibujarPuerta(modelo, pos_x,pos_y):
+
+def dibujarPuerta(modelo, pos_x,pos_y,cont):
     a = Puerta(modelo,(pos_x,pos_y),True)
     modelo.schedule.add(a)
     modelo.grid.place_agent(a, a.pos)
-    modelo.posPuertas.append(a.pos)
-    modelo.puertas.append(a)
+    modelo.posPuertas[cont].append(a.pos)
+    modelo.puertas[cont].append(a)
 
 def dibujarPasajeros(modelo,N_Pasajeros,step):
     contador = 0
@@ -210,27 +199,23 @@ def dibujarPasajeros(modelo,N_Pasajeros,step):
             #Dibuja el agente pasajero
             modelo.grid.place_agent(a, a.pos)
 
-def dibujarTren(modelo,N_Trenes,step):
-    contador = 0
-    while contador < N_Trenes:
-        # Creacion
-        if step == False:
-            pos_x = POSY_I_TREN 
-            pos_y = 1
-        # Steps genericos
-        else:
-            pos_x = POSY_I_TREN
-            pos_y = 1
-            # pos_x = modelo.random.randint(POSX_ORIGEN + 1,POSX_FINAL - 2)
-            # pos_y = modelo.random.randint(POSY_ORIGEN + 1 ,POSY_MURO_TREN - 1)
-        if pos_y != POSY_MURO_ENTRADA and pos_y !=  POSY_MURO_TREN : # Aca falta validar los muros intermedios
-            contador+=1
-            print("Soy un tren")
-            print("XY", pos_x, pos_y)
+def dibujarTren(modelo,N_Trenes):
+    pos_x = POSY_I_TREN 
+    print("Pos Tren", pos_x)
+    pos_y = 1
+    vecinos = modelo.grid.get_neighbors((POSY_I_TREN,1),moore=True, include_center=True,radius=0)
+    vecinos = [x for x in vecinos if type(x) is Tren ]
+    if vecinos==[]:
+        print("Soy un nuevo tren")
+        modelo.colorRuta = modelo.colorRuta+1
+        print("XY", pos_x, pos_y)
 
-            a = Tren(modelo,(pos_x,pos_y))
-            modelo.schedule.add(a)
-            modelo.grid.place_agent(a, a.pos)
+        a = Tren(modelo,(pos_x,pos_y),len(modelo.trenes),(modelo.colorRuta%2))
+        modelo.schedule.add(a)
+        modelo.posPuertas.append(a.pos)
+        modelo.trenes.append(a)
+        modelo.grid.place_agent(a, a.pos)
+            
             
 
 def dibujarNuevosPasajeros(modelo,N_Pasajeros):

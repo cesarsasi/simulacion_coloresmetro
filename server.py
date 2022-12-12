@@ -61,9 +61,13 @@ def agent_portrayal(agent):
         portrayal["Layer"] = 1
         portrayal["Shape"] = "rect"
         portrayal["Filled"] = "true"
-        portrayal["Color"] = "blue"
         portrayal["w"] = LARGO_TREN
         portrayal["h"] = ANCHO_TREN
+        # color 2 = Común , 1 = Verde, 0 = Rojo
+        if agent.colorRuta == 0:
+            portrayal["Color"] = "red"
+        else:
+            portrayal["Color"] = "green"
     return portrayal
 # dibujarMuro(modelo, POSX_ORIGEN, POSX_FINAL, POSY_MURO_TREN, POSY_MURO_TREN)    
 grid = CanvasGrid(agent_portrayal,POSX_FINAL,POSY_FINAL,POSX_FINAL*10,POSY_FINAL*10)
