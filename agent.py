@@ -5,6 +5,7 @@ import math
 #Cada estación se compone de [nombre estación, personas iniciales,personas que ingresan por step, color, capacidad estación]
 #Color 0 = Común , 1 = Verde, 2 = Rojo
 #Aolor 2 = Común , 1 = Verde, 0 = Rojo
+
 LISTA_ESTACIONES = [["Puente Alto",10,15,2,3000],["Las mercedes",10,15,0,3000],["Protectora de la infancia",10,15,1,3000],["Hospital Sotero del Rio",10,15,2,3000],["Elisa Correa",10,15,2,3000],["Los Quillayes",10,15,1,3000],["San José de la Estrella",10,15,0,3000],["Trinidad",10,15,1,3000],["Rojas Magallanes",10,15,0,3000],["Vicente Valdés",10,15,2,3000],["Vicuña Mackenna",10,15,2,3000],["Macul",10,15,2,3000],["Las Torres",10,15,1,3000],["Quilin",10,15,0,3000],["Los Presidentes",10,15,1,3000],["Grecia",10,15,0,3000],["Los Orientales",10,15,1,3000],["Plaza Egaña",10,15,2,3000],["Simón Bolivar",10,15,0,3000],["Principe de Gales",10,15,1,3000],["Francisco Bilbao",10,15,2,3000],["Cristóbal Colón",10,15,0,3000],["Tobalba",10,15,2,3000]]
 LARGO_ANDEN = 50
 POSX_ORIGEN = 0
@@ -20,7 +21,7 @@ CANT_ANDENES = len(LISTA_ESTACIONES)
 POSY_MURO_ENTRADA = POSY_FINAL - int(math.floor(POSY_FINAL * .5))
 POSY_MURO_TREN    = POSY_FINAL - int(math.floor(POSY_FINAL * .8))
 
-POSY_I_TREN = LARGO_ANDEN - 2
+POSY_I_TREN = LARGO_ANDEN - 1
 POSY_F_TREN = POSY_FINAL - 1
 
 ANCHO_TREN  = POSY_FINAL - int(math.floor(POSY_FINAL * .8)) -1
@@ -66,11 +67,12 @@ class Puerta(Construccion):
         return self.pos
 
 class Pasajero(Agent):
-    def __init__(self, model, pos):
+    def __init__(self, model, pos, estacionDestino):
         super().__init__(self,model)
         self.pos = pos
         self.direccion = self.set_direction()
         self.estacionOrigen = 0
+        self.estacionDestino = 0
         self.pasoAccesoEntrada = False
         self.pasoAccesoSalida = False
         self.salioVagon = False
@@ -183,6 +185,8 @@ class Pasajero(Agent):
     def step(self):
         id_anden = math.floor(self.pos[0]/LARGO_ANDEN)
         # print("IDANDEN", id_anden) 
+        if( math.floor(self.pos[0]/LARGO_ANDEN) == self.estacionDestino):
+            self.direccion = False
         if self.pos in self.model.posPuertas[id_anden] and self.direccion and not self.entroVagon:
             self.entroVagon = True
             # self.model.pasajerosEntraronTren+=1
@@ -298,7 +302,7 @@ class Tren(Agent):
             #         print("X", pu.cerrada)
 
             #Captar pasajeros
-            self.pasajeros = self.obtenerPasajerosEnRango((self.pos[0]+2-50),(self.pos[0]+2), POSY_MURO_TREN,POSY_MURO_ENTRADA)
+            self.pasajeros = self.obtenerPasajerosEnRango((self.pos[0]+2-50),(self.pos[0]+2), 0,POSY_MURO_TREN)
             print("T",self.id,": Pasajeros : ",len(self.pasajeros))
             print("T",self.id,": limpieza  : ", (self.pos[0]+2-50) , (self.pos[0]+2))
 
@@ -312,17 +316,13 @@ class Tren(Agent):
             # verificar que no haya tren en el siguiente paso
             if destino[0] < POSX_FINAL and len(tren_andensiguiente) == 0 : 
                 # Remover tren y pasajeros de la grilla
-                total = self.moverPasajerosEnRango((self.pos[0]-LARGO_ANDEN+2), (self.pos[0]+2), 0, POSY_MURO_ENTRADA)
-                print("LEER x0: ",(self.pos[0]-LARGO_ANDEN+2),"x1: ",(self.pos[0]+2),"y0: ",POSY_MURO_TREN,"y1: ",POSY_MURO_ENTRADA)
+                total = self.moverPasajerosEnRango((self.pos[0]-LARGO_ANDEN+2), (self.pos[0]+2), 0, POSY_MURO_TREN)
+                print("LEER x0: ",(self.pos[0]-LARGO_ANDEN+2),"x1: ",(self.pos[0]+2),"y0: ",0,"y1: ",POSY_MURO_TREN)
                 self.model.grid.move_agent(self,destino)
                 print("T",self.id,": cantidad  : ",len(total))
             else: 
                 print("T",self.id,": Fin Viaje . ")
-    
             self.contador = 0 
-
-        # abrirPuertas(self,pasajerosEntrantes, colorEstacion)
-        # avanzarTren(self)
 
     def obtenerPasajerosEnRango(self,xinicial,xfinal, yinicial,yfinal):
         totalPasajeros = []

@@ -61,7 +61,7 @@ def agent_portrayal(agent):
         portrayal["Layer"] = 1
         portrayal["Shape"] = "rect"
         portrayal["Filled"] = "true"
-        portrayal["w"] = LARGO_TREN
+        portrayal["w"] = LARGO_TREN+3
         portrayal["h"] = ANCHO_TREN
         # color 2 = Común , 1 = Verde, 0 = Rojo
         if agent.colorRuta == 0:
