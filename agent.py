@@ -72,7 +72,7 @@ class Pasajero(Agent):
         self.pos = pos
         self.direccion = self.set_direction()
         self.estacionOrigen = 0
-        self.estacionDestino = 0
+        self.estacionDestino = estacionDestino
         self.pasoAccesoEntrada = False
         self.pasoAccesoSalida = False
         self.salioVagon = False
@@ -185,7 +185,9 @@ class Pasajero(Agent):
     def step(self):
         id_anden = math.floor(self.pos[0]/LARGO_ANDEN)
         # print("IDANDEN", id_anden) 
-        if( math.floor(self.pos[0]/LARGO_ANDEN) == self.estacionDestino):
+
+        if( int(id_anden) == int(self.estacionDestino)):
+            print("ANDEN ",id_anden,": DESTINO  : ", self.estacionDestino)
             self.direccion = False
         if self.pos in self.model.posPuertas[id_anden] and self.direccion and not self.entroVagon:
             self.entroVagon = True

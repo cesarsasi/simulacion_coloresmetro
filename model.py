@@ -186,16 +186,16 @@ def dibujarPasajeros(modelo,N_Pasajeros,step):
         # Creacion
         if step == False:
             pos_x = modelo.random.randint(POSX_ORIGEN + 1,POSX_FINAL - 2)
-            estacionComienzo = (int)(pos_x/LARGO_ANDEN)
+            estacionComienzo = math.floor(pos_x/LARGO_ANDEN)
             pos_y = modelo.random.randint(POSY_MURO_TREN + 1 ,POSY_FINAL - 2)
             estacionDestino = modelo.random.randint(estacionComienzo,CANT_ANDENES)
         # Steps genericos
         else:
             pos_x = modelo.random.randint(POSX_ORIGEN + 1,POSX_FINAL - 2)
-            estacionComienzo = (int)(pos_x/LARGO_ANDEN)
+            estacionComienzo = math.floor(pos_x/LARGO_ANDEN)
             pos_y = modelo.random.randint(POSY_ORIGEN + 1 ,POSY_MURO_TREN - 1)
             estacionDestino = modelo.random.randint(estacionComienzo,CANT_ANDENES)
-        if pos_y != POSY_MURO_ENTRADA and pos_y !=  POSY_MURO_TREN:
+        if pos_y != POSY_MURO_ENTRADA and pos_y !=  POSY_MURO_TREN and int(estacionDestino) != 0:
             contador+=1
             #Crear pasajero
             a = Pasajero(modelo,(pos_x,pos_y), estacionDestino)
@@ -229,22 +229,23 @@ def dibujarNuevosPasajeros(modelo,N_Pasajeros):
         for anden in range(CANT_ANDENES):
             estacion = (int)((largoAnden)*(anden))
             print("AA", estacion, CANT_ANDENES)
-            if modelo.random.randint(0,1):
-                pos_x = (int)(estacion + (largoAnden*.3)) 
-                estacionComienzo = (int)(pos_x/LARGO_ANDEN)
-                estacionDestino = modelo.random.randint(estacionComienzo,CANT_ANDENES)
-                pos_y = POSY_FINAL -2
-                #contador+=1
-            else:
-                pos_x = (int)(estacion + (largoAnden*.7))
-                estacionComienzo = (int)(pos_x/LARGO_ANDEN)
-                estacionDestino = modelo.random.randint(estacionComienzo,CANT_ANDENES)
-                pos_y = POSY_FINAL -2
             # Dibuja pasajeros entrantes
             for i in range (0,P_ENTRANDO_ESTACION):
-                a = Pasajero(modelo,(pos_x,pos_y), estacionDestino)
-                modelo.schedule.add(a)
-                modelo.grid.place_agent(a, a.pos)
+                if modelo.random.randint(0,1):
+                    pos_x = (int)(estacion + (largoAnden*.3)) 
+                    estacionComienzo = math.floor(pos_x/LARGO_ANDEN)
+                    estacionDestino = modelo.random.randint(estacionComienzo,CANT_ANDENES)
+                    pos_y = POSY_FINAL -2
+                    #contador+=1
+                else:
+                    pos_x = (int)(estacion + (largoAnden*.7))
+                    estacionComienzo = math.floor(pos_x/LARGO_ANDEN)
+                    estacionDestino = modelo.random.randint(estacionComienzo,CANT_ANDENES)
+                    pos_y = POSY_FINAL -2
+                if pos_y != POSY_MURO_ENTRADA and pos_y !=  POSY_MURO_TREN and int(estacionDestino) != 0:
+                    a = Pasajero(modelo,(pos_x,pos_y), estacionDestino)
+                    modelo.schedule.add(a)
+                    modelo.grid.place_agent(a, a.pos)
 
 def calcularUInteriores():
     i = .1
