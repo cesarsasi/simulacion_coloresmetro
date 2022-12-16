@@ -14,7 +14,7 @@ POSY_ORIGEN = 0
 POSY_FINAL  = 50
 POSX_FINAL  = LARGO_ANDEN*len(LISTA_ESTACIONES)
 
-CANT_PUERTAS = 4
+CANT_PUERTAS = 24
 CANT_TORNIQU = 10
 CANT_ANDENES = len(LISTA_ESTACIONES)
 
@@ -102,6 +102,14 @@ class Pasajero(Agent):
             distancias.append( math.pow( posPasajero[0] - puerta.get_pos()[0], 2) + math.pow(posPasajero[1] - puerta.get_pos()[1], 2) )
         return puertas[ distancias.index(min(distancias)) ] 
 
+    def elegirPuertaRandom(self,modelo, posPasajero):
+        indicePuertas  = math.floor(posPasajero[0]/LARGO_ANDEN)
+        puertas = modelo.getPuertas(indicePuertas)
+        index = self.random.randint(0,(len(puertas)-1))
+        return puertas[index] 
+
+    
+
     # Direccion accesos
     def elegirAcceso(self,modelo, posPasajero, direccion):
         distancias = []
@@ -146,6 +154,7 @@ class Pasajero(Agent):
                 distancias.append( math.pow( destinoSiguiente[0] - accesoDestino.get_pos()[0], 2) + math.pow(destinoSiguiente[1] - accesoDestino.get_pos()[1], 2) )
             else:
                 distancias.append( math.pow( destinoSiguiente[0] - accesoDestino[0], 2) + math.pow(destinoSiguiente[1] - accesoDestino[1], 2) )
+                
         return destinosPosibles[ distancias.index(min(distancias)) ]
 
     def obtenerDestinosPosiblesPuertas(self,puertaDestino):

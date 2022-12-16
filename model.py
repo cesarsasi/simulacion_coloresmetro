@@ -217,7 +217,7 @@ def dibujarPuertas(modelo):
         modelo.posPuertas.append([])
         for puerta in range(CANT_PUERTAS+1):
             if(puerta != 0):
-                xPuerta = (int)(math.floor(largoAnden * ( .2 * (puerta))))
+                xPuerta = (int)(math.floor(largoAnden * ( .04 * (puerta))))
                 #print("CONT P", cont_p)
                 dibujarPuerta(modelo,xPuerta + andenx ,POSY_MURO_TREN, cont_p)
         cont_p=cont_p+1
