@@ -2,11 +2,13 @@ from mesa import Model
 from mesa.time import RandomActivation 
 from mesa.space import MultiGrid
 from agent import Pasajero, Construccion, Muro, AccesoEntrada, AccesoSalida, Puerta, Tren
+from mesa.datacollection import DataCollector
 #Importar las constantes de los agentes
 from agent import POSX_ORIGEN, POSX_FINAL, POSY_ORIGEN, POSY_FINAL, CANT_ANDENES, CANT_PUERTAS, CANT_TORNIQU, POSY_MURO_ENTRADA,POSY_MURO_TREN, LISTA_ESTACIONES, TIMERCERRAR, LARGO_ANDEN, POSY_I_TREN
 import numpy as np
-import csv 
 import matplotlib.pyplot as plt
+import csv 
+
 import math 
 import time
 from random import randrange
@@ -18,9 +20,52 @@ MIN_P_CARRO = 30
 #Cantidad máxima de pasajeros que llegan dentro del carro
 MAN_P_CARRO = 50 
 
-
-
-
+def getSat0(model):
+    return model.saturacionEstaciones[0]
+def getSat1(model):
+    return model.saturacionEstaciones[1]
+def getSat2(model):
+    return model.saturacionEstaciones[2]
+def getSat3(model):
+    return model.saturacionEstaciones[3]
+def getSat4(model):
+    return model.saturacionEstaciones[4]
+def getSat5(model):
+    return model.saturacionEstaciones[5]
+def getSat6(model):
+    return model.saturacionEstaciones[6]
+def getSat7(model):
+    return model.saturacionEstaciones[7]
+def getSat8(model):
+    return model.saturacionEstaciones[8]
+def getSat9(model):
+    return model.saturacionEstaciones[9]
+def getSat10(model):
+    return model.saturacionEstaciones[10]
+def getSat11(model):
+    return model.saturacionEstaciones[11]
+def getSat12(model):
+    return model.saturacionEstaciones[12]
+def getSat13(model):
+    return model.saturacionEstaciones[13]
+def getSat14(model):
+    return model.saturacionEstaciones[14]
+def getSat15(model):
+    return model.saturacionEstaciones[15]
+def getSat16(model):
+    return model.saturacionEstaciones[16]
+def getSat17(model):
+    return model.saturacionEstaciones[17]
+def getSat18(model):
+    return model.saturacionEstaciones[18]
+def getSat19(model):
+    return model.saturacionEstaciones[19]
+def getSat20(model):
+    return model.saturacionEstaciones[20]
+def getSat21(model):
+    return model.saturacionEstaciones[21]
+def getSat22(model):
+    return model.saturacionEstaciones[22]
 class miModelo(Model):
     def __init__(self,N_Pasajeros): #constructor, metemos el argumento Número Pasajeros iniciales
         self.running = True #permite la ejecución continua 
@@ -34,10 +79,8 @@ class miModelo(Model):
         self.posTrenes = [] #guarda las posiciones de los trenes
         self.trenes = [] #guarda los objetos tren
         self.cronogramaPasajeros = []  #orden y lugar de llegada, junto a destino de pasajeros
-        self.saturacionEstaciones = []
-
+        #self.saturacionEstaciones = []
         self.posUInteriores = calcularUInteriores() #te calcula todas las posiciones interios del vagón a donde se dirigen los usuarios
-        
         self.contador = 1 # contador de ticks para abrir y cerrar puertas
         self.pasajerosEntraronAccesos = 0 #contador para pasajeros que entran a accesos
         self.pasajerosSalieronAccesos = 0 #contador para pasajeros que entran a accesos
@@ -56,12 +99,37 @@ class miModelo(Model):
         dibujarMuros(self)  
         dibujarPasajeros(self,N_Pasajeros, False)
         dibujarTren(self,1)
-        
         # a = Puerta(self,(1,1))
         # self.schedule.add(a)
         # #Dibuja el agente pasajero
         # self.grid.place_agent(a, a.pos)
-
+        self.datacollector = DataCollector(
+            model_reporters={
+                "Plaza puente alto" : getSat0,
+                "Las Mercedes": getSat1,
+                "Protectora de la infancia": getSat2,
+                "Hospital Sotero del Rio": getSat3,
+                "Elisa Correa": getSat4,
+                "Los Quillayes": getSat5,
+                "San José de la Estrella": getSat6,
+                "Trinidad": getSat7,
+                "Rojas Magallanes": getSat8,
+                "Vicente Valdés": getSat9,
+                "Vicuña Mackenna": getSat10,
+                "Macul": getSat11,
+                "Las Torres": getSat12,
+                "Quilin": getSat13,
+                "Los Presidentes": getSat14,
+                "Grecia": getSat15,
+                "Los Orientales": getSat16,
+                "Plaza Egaña": getSat17,
+                "Simón Bolivar": getSat18,
+                "Principe de Gales": getSat19,
+                "Francisco Bilbao": getSat20,
+                "Cristóbal Colón": getSat21,
+                "Tobalba": getSat22,
+            })
+    
     def step(self):
         print("Comenzar step")
         self.schedule.step()
@@ -77,8 +145,7 @@ class miModelo(Model):
         for i in range (0,len(LISTA_ESTACIONES)):
             pasajero_anden = obtenerPasajerosEnRango(self, i*LARGO_ANDEN,i*LARGO_ANDEN +LARGO_ANDEN, POSY_MURO_TREN,POSY_MURO_ENTRADA)
             self.saturacionEstaciones.append(pasajero_anden)
-        # print("SAT", self.saturacionEstaciones)
-
+        #print("SAT", self.saturacionEstaciones)
         # pasajerosAEntrar = []
         # pasajerosASalir = []
 
@@ -86,8 +153,8 @@ class miModelo(Model):
         print("Los pasajeros que han salido por los accesos son ", self.pasajerosSalieronAccesos)
         # print("Los Pasajeros que han entrado al carro son ", self.pasajerosEntraronCarro)
         # print("Los Pasajeros que han salido del carro son ", self.pasajerosSalieronCarro)
+        self.datacollector.collect(self)
         print("---- Terminar step ----")
-
     def getAccesosEntrada(self):
         return self.posAccesosEntrada
     def getPuertas(self, ind):
@@ -98,7 +165,6 @@ class miModelo(Model):
         return self.posUInteriores
     def getAccesosSalida(self):
         return self.posAccesosSalida
-    
 
 def cargarDatos(modelo):
     with open('viajes.csv', 'r') as f:
@@ -142,7 +208,7 @@ def cargarDatos(modelo):
             list_ticks.append([])
             list_ticks[conta].append([subida,bajada])
 
-        # print('SEG', registro[2]) 
+        print('SEG', registro[2]) 
 
     modelo.cronogramaPasajeros = list_ticks
                 
