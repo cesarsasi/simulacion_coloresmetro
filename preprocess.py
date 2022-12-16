@@ -41,7 +41,3 @@ for registro in dataarray:
         conta = conta + 1
         list_ticks.append([])
         list_ticks[conta].append([subida,bajada])
-
-    print('SEG', registro[2]) 
-
-print(list_ticks)

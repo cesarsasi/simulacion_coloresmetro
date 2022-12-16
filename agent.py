@@ -196,7 +196,7 @@ class Pasajero(Agent):
         # print("IDANDEN", id_anden) 
 
         if( int(id_anden) == int(self.estacionDestino)):
-            print("ANDEN ",id_anden,": DESTINO  : ", self.estacionDestino)
+            # print("ANDEN ",id_anden,": DESTINO  : ", self.estacionDestino)
             self.direccion = False
         if self.pos in self.model.posPuertas[id_anden] and self.direccion and not self.entroVagon:
             self.entroVagon = True
@@ -291,7 +291,7 @@ class Tren(Agent):
         self.contador +=1
         anden  = math.floor(self.pos[0]/LARGO_ANDEN)
         puertas = self.model.puertas[anden]
-        print("Puertas", anden)
+        # print("Puertas", anden)
 
         #Abrir Puertas Tomar pasajeros
         if(self.contador == TIMERABRIR) and (LISTA_ESTACIONES[anden][3]%2) == self.colorRuta: #and la estacion es la suya
@@ -303,7 +303,6 @@ class Tren(Agent):
             #     for pu in mod:
             #         print("X", pu.cerrada)
             
-
         # Cerrar Puertas
         elif self.contador == TIMERCERRAR:
             print("T",self.id,": CloseDoor : ",anden)
@@ -335,6 +334,9 @@ class Tren(Agent):
             else: 
                 print("T",self.id,": Fin Viaje . ")
             self.contador = 0 
+        
+            self.model.schedule.remove(self)
+            self.model.grid.remove_agent(self)
 
     def obtenerPasajerosEnRango(self,xinicial,xfinal, yinicial,yfinal):
         totalPasajeros = []

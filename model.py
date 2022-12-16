@@ -6,7 +6,7 @@ from agent import Pasajero, Construccion, Muro, AccesoEntrada, AccesoSalida, Pue
 from agent import POSX_ORIGEN, POSX_FINAL, POSY_ORIGEN, POSY_FINAL, CANT_ANDENES, CANT_PUERTAS, CANT_TORNIQU, POSY_MURO_ENTRADA,POSY_MURO_TREN, LISTA_ESTACIONES, TIMERCERRAR, LARGO_ANDEN, POSY_I_TREN
 import numpy as np
 import csv 
-
+import matplotlib.pyplot as plt
 import math 
 import time
 from random import randrange
@@ -77,7 +77,7 @@ class miModelo(Model):
         for i in range (0,len(LISTA_ESTACIONES)):
             pasajero_anden = obtenerPasajerosEnRango(self, i*LARGO_ANDEN,i*LARGO_ANDEN +LARGO_ANDEN, POSY_MURO_TREN,POSY_MURO_ENTRADA)
             self.saturacionEstaciones.append(pasajero_anden)
-        print("SAT", self.saturacionEstaciones)
+        # print("SAT", self.saturacionEstaciones)
 
         # pasajerosAEntrar = []
         # pasajerosASalir = []
@@ -98,6 +98,7 @@ class miModelo(Model):
         return self.posUInteriores
     def getAccesosSalida(self):
         return self.posAccesosSalida
+    
 
 def cargarDatos(modelo):
     with open('viajes.csv', 'r') as f:
@@ -141,7 +142,7 @@ def cargarDatos(modelo):
             list_ticks.append([])
             list_ticks[conta].append([subida,bajada])
 
-        print('SEG', registro[2]) 
+        # print('SEG', registro[2]) 
 
     modelo.cronogramaPasajeros = list_ticks
                 
