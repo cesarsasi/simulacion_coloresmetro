@@ -6,20 +6,20 @@ import math
 #Color 0 = Común , 1 = Verde, 2 = Rojo
 #Aolor 2 = Común , 1 = Verde, 0 = Rojo
 
-LISTA_ESTACIONES = [["Puente Alto",10,15,2,3000],["Las mercedes",10,15,0,3000],["Protectora de la infancia",10,15,1,3000],["Hospital Sotero del Rio",10,15,2,3000],["Elisa Correa",10,15,2,3000],["Los Quillayes",10,15,1,3000],["San José de la Estrella",10,15,0,3000],["Trinidad",10,15,1,3000],["Rojas Magallanes",10,15,0,3000],["Vicente Valdés",10,15,2,3000],["Vicuña Mackenna",10,15,2,3000],["Macul",10,15,2,3000],["Las Torres",10,15,1,3000],["Quilin",10,15,0,3000],["Los Presidentes",10,15,1,3000],["Grecia",10,15,0,3000],["Los Orientales",10,15,1,3000],["Plaza Egaña",10,15,2,3000],["Simón Bolivar",10,15,0,3000],["Principe de Gales",10,15,1,3000],["Francisco Bilbao",10,15,2,3000],["Cristóbal Colón",10,15,0,3000],["Tobalba",10,15,2,3000]]
-LARGO_ANDEN = 50
+LISTA_ESTACIONES = [["Puente Alto",10,15,2,1500],["Las mercedes",10,15,0,1500],["Protectora de la infancia",10,15,1,1500],["Hospital Sotero del Rio",10,15,2,1500],["Elisa Correa",10,15,2,1500],["Los Quillayes",10,15,1,1500],["San José de la Estrella",10,15,0,1500],["Trinidad",10,15,1,1500],["Rojas Magallanes",10,15,0,1500],["Vicente Valdés",10,15,2,1500],["Vicuña Mackenna",10,15,2,1500],["Macul",10,15,2,1500],["Las Torres",10,15,1,1500],["Quilin",10,15,0,1500],["Los Presidentes",10,15,1,1500],["Grecia",10,15,0,1500],["Los Orientales",10,15,1,1500],["Plaza Egaña",10,15,2,1500],["Simón Bolivar",10,15,0,1500],["Principe de Gales",10,15,1,1500],["Francisco Bilbao",10,15,2,1500],["Cristóbal Colón",10,15,0,1500],["Tobalba",10,15,2,1500]]
+
+LARGO_ANDEN = 150
 POSX_ORIGEN = 0
 POSY_ORIGEN = 0
-POSY_FINAL  = 20
+POSY_FINAL  = 50
 POSX_FINAL  = LARGO_ANDEN*len(LISTA_ESTACIONES)
 
 CANT_PUERTAS = 4
-CANT_TORNIQU = 3
+CANT_TORNIQU = 10
 CANT_ANDENES = len(LISTA_ESTACIONES)
 
-
-POSY_MURO_ENTRADA = POSY_FINAL - int(math.floor(POSY_FINAL * .5))
-POSY_MURO_TREN    = POSY_FINAL - int(math.floor(POSY_FINAL * .8))
+POSY_MURO_ENTRADA = 20
+POSY_MURO_TREN    = 10
 
 POSY_I_TREN = LARGO_ANDEN - 1
 POSY_F_TREN = POSY_FINAL - 1
@@ -30,7 +30,7 @@ LARGO_TREN  = LARGO_ANDEN - 4
 #Pasos en los que se abre la puerta
 TIMERABRIR = 2
 #Pasos en los que se cierra la puerta
-TIMERCERRAR = 10
+TIMERCERRAR = 6
 
 CANT_P_PUERTACARRO = 5
 CANT_P_TORNIQUETE = 1
@@ -67,11 +67,11 @@ class Puerta(Construccion):
         return self.pos
 
 class Pasajero(Agent):
-    def __init__(self, model, pos, estacionDestino):
+    def __init__(self, model, pos, estacionOrigen, estacionDestino):
         super().__init__(self,model)
         self.pos = pos
         self.direccion = self.set_direction()
-        self.estacionOrigen = 0
+        self.estacionOrigen = estacionOrigen
         self.estacionDestino = estacionDestino
         self.pasoAccesoEntrada = False
         self.pasoAccesoSalida = False
@@ -204,6 +204,7 @@ class Pasajero(Agent):
         if self.pos[0] == POSX_ORIGEN or self.pos[0] == POSX_FINAL -1  or self.pos[1] == POSY_ORIGEN or self.pos[1] == POSY_FINAL -1:
             self.model.schedule.remove(self)
             self.model.grid.remove_agent(self)
+        
         # elif self.model.contador == TIMERCERRAR -1 and self.pos[1] < POSY_MURO_TREN +1 and not self.model.puertas[id_anden][0].cerrada:
         #     self.model.schedule.remove(self)
         #     self.model.grid.remove_agent(self)

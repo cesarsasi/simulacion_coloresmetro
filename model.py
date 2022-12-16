@@ -4,17 +4,20 @@ from mesa.space import MultiGrid
 from agent import Pasajero, Construccion, Muro, AccesoEntrada, AccesoSalida, Puerta, Tren
 #Importar las constantes de los agentes
 from agent import POSX_ORIGEN, POSX_FINAL, POSY_ORIGEN, POSY_FINAL, CANT_ANDENES, CANT_PUERTAS, CANT_TORNIQU, POSY_MURO_ENTRADA,POSY_MURO_TREN, TIMERABRIR, TIMERCERRAR, LARGO_ANDEN, POSY_I_TREN
+import numpy as np
+import csv 
 
 import math 
 import time
 from random import randrange
 
 #La cantidad de pasajeros que van apareciendo y se dirigen a los accesos
-P_ENTRANDO_ESTACION = 10 
+P_ENTRANDO_ESTACION = 3
 #Cantidad mínima de pasajeros que llegan dentro del carro
 MIN_P_CARRO = 30 
 #Cantidad máxima de pasajeros que llegan dentro del carro
 MAN_P_CARRO = 50 
+
 
 
 
@@ -30,6 +33,7 @@ class miModelo(Model):
         self.puertas = [] #guarda los objetos puerta
         self.posTrenes = [] #guarda las posiciones de los trenes
         self.trenes = [] #guarda los objetos tren
+        self.cronogramaPasajeros = []  #orden y lugar de llegada, junto a destino de pasajeros
 
         self.posUInteriores = calcularUInteriores() #te calcula todas las posiciones interios del vagón a donde se dirigen los usuarios
         
@@ -41,6 +45,8 @@ class miModelo(Model):
         self.colorRuta = 0
         #self.timer = TIMERABIERTO
         
+        # Carga de pasajeros
+        cargarDatos(self)
 
         # Dibujar limites
         dibujarAccesos(self) 
@@ -59,7 +65,7 @@ class miModelo(Model):
         print("Comenzar step")
         self.schedule.step()
 
-        dibujarNuevosPasajeros(self,1)
+        dibujarNuevosPasajeros(self,1,self.contador)
 
         dibujarTren(self,1)
         
@@ -85,6 +91,52 @@ class miModelo(Model):
         return self.posUInteriores
     def getAccesosSalida(self):
         return self.posAccesosSalida
+
+def cargarDatos(modelo):
+    with open('viajes.csv', 'r') as f:
+        data = list(csv.reader(f, delimiter=","))
+
+    dataarray = np.array(data)
+    dataarray = np.delete(dataarray,(0), axis = 0)
+    dataarray[dataarray[:,2].argsort()]
+
+    tini= dataarray[0][2].split(':')
+    tfin= dataarray[-1][2].split(':')
+
+
+
+    ini = int(tini[0])*60*60 + int(tini[1])*60 + int(tini[2])
+    fin = int(tfin[0])*60*60 + int(tfin[1])*60 + int(tfin[2])
+
+    ticks = int((fin-ini)/15)
+    print("[TICKS]:", ticks)
+
+    cont = 0
+    for registro in dataarray:
+        texreg= registro[2].split(':')
+        timereg = int(texreg[0])*60*60 + int(texreg[1])*60 + int(texreg[2])
+        dataarray[cont][2] = timereg
+        cont = cont+1
+
+    list_ticks = [[]]
+    time = int(ini) + 15
+    conta = 0
+    for registro in dataarray:
+        timep = int(registro[2])
+        subida = int(registro[6])
+        bajada = int(registro[7])
+
+        if timep < time:
+            list_ticks[conta].append([subida,bajada])
+        else:
+            time = time + 15
+            conta = conta + 1
+            list_ticks.append([])
+            list_ticks[conta].append([subida,bajada])
+
+        print('SEG', registro[2]) 
+
+    modelo.cronogramaPasajeros = list_ticks
                 
 def dibujarMuros(modelo):
     # Extremos
@@ -138,9 +190,8 @@ def dibujarAccesos(modelo):
         dibujarAcceso(modelo,andenx+XTORNIQUETE_IZQ,POSY_MURO_ENTRADA, False)
         dibujarAcceso(modelo,andenx+XTORNIQUETE_IZQ-1,POSY_MURO_ENTRADA, False)
         # Accesos Entrada (3)
-        dibujarAcceso(modelo,andenx+XTORNIQUETE_CTR,POSY_MURO_ENTRADA, True)
-        dibujarAcceso(modelo,andenx+XTORNIQUETE_CTR+1,POSY_MURO_ENTRADA, True)
-        dibujarAcceso(modelo,andenx+XTORNIQUETE_CTR-1,POSY_MURO_ENTRADA, True)
+        for i in range(0,CANT_TORNIQU):
+            dibujarAcceso(modelo,andenx+XTORNIQUETE_CTR+i-4,POSY_MURO_ENTRADA, True)
 
 def dibujarAcceso(modelo, pos_x,pos_y,EoS): 
     #EoS es Entrada (True), Salida (False)
@@ -198,7 +249,7 @@ def dibujarPasajeros(modelo,N_Pasajeros,step):
         if pos_y != POSY_MURO_ENTRADA and pos_y !=  POSY_MURO_TREN and int(estacionDestino) != 0:
             contador+=1
             #Crear pasajero
-            a = Pasajero(modelo,(pos_x,pos_y), estacionDestino)
+            a = Pasajero(modelo,(pos_x,pos_y), estacionComienzo, estacionDestino)
             modelo.schedule.add(a)
             #Dibuja el agente pasajero
             modelo.grid.place_agent(a, a.pos)
@@ -222,30 +273,20 @@ def dibujarTren(modelo,N_Trenes):
             
             
 
-def dibujarNuevosPasajeros(modelo,N_Pasajeros):
-    #while contador < N_Pasajeros:
-    if modelo.random.randint(0,1):
-        largoAnden = (int)(POSX_FINAL/CANT_ANDENES)
-        for anden in range(CANT_ANDENES):
-            estacion = (int)((largoAnden)*(anden))
-            print("AA", estacion, CANT_ANDENES)
-            # Dibuja pasajeros entrantes
-            for i in range (0,P_ENTRANDO_ESTACION):
-                if modelo.random.randint(0,1):
-                    pos_x = (int)(estacion + (largoAnden*.3)) 
-                    estacionComienzo = math.floor(pos_x/LARGO_ANDEN)
-                    estacionDestino = modelo.random.randint(estacionComienzo,CANT_ANDENES)
-                    pos_y = POSY_FINAL -2
-                    #contador+=1
-                else:
-                    pos_x = (int)(estacion + (largoAnden*.7))
-                    estacionComienzo = math.floor(pos_x/LARGO_ANDEN)
-                    estacionDestino = modelo.random.randint(estacionComienzo,CANT_ANDENES)
-                    pos_y = POSY_FINAL -2
-                if pos_y != POSY_MURO_ENTRADA and pos_y !=  POSY_MURO_TREN and int(estacionDestino) != 0:
-                    a = Pasajero(modelo,(pos_x,pos_y), estacionDestino)
-                    modelo.schedule.add(a)
-                    modelo.grid.place_agent(a, a.pos)
+def dibujarNuevosPasajeros(modelo,N_Pasajeros,cont):
+    # Dibuja pasajeros entrantes
+    for i in range (0,len(modelo.cronogramaPasajeros[cont])):
+        
+        # pos_x = (int)(modelo.cronogramaPasajeros[cont][i][0]*LARGO_ANDEN + (LARGO_ANDEN*.7))
+        estacionComienzo = modelo.cronogramaPasajeros[cont][i][0]
+        pos_x = modelo.random.randint(estacionComienzo*LARGO_ANDEN +1 ,estacionComienzo*LARGO_ANDEN + LARGO_ANDEN - 1)
+        estacionDestino = modelo.cronogramaPasajeros[cont][i][1]
+        pos_y = POSY_FINAL -2
+
+        if pos_y != POSY_MURO_ENTRADA and pos_y !=  POSY_MURO_TREN and int(estacionDestino) != 0:
+            a = Pasajero(modelo,(pos_x,pos_y), estacionComienzo, estacionDestino)
+            modelo.schedule.add(a)
+            modelo.grid.place_agent(a, a.pos)
 
 def calcularUInteriores():
     i = .1
