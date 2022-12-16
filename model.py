@@ -3,7 +3,7 @@ from mesa.time import RandomActivation
 from mesa.space import MultiGrid
 from agent import Pasajero, Construccion, Muro, AccesoEntrada, AccesoSalida, Puerta, Tren
 #Importar las constantes de los agentes
-from agent import POSX_ORIGEN, POSX_FINAL, POSY_ORIGEN, POSY_FINAL, CANT_ANDENES, CANT_PUERTAS, CANT_TORNIQU, POSY_MURO_ENTRADA,POSY_MURO_TREN, TIMERABRIR, TIMERCERRAR, LARGO_ANDEN, POSY_I_TREN
+from agent import POSX_ORIGEN, POSX_FINAL, POSY_ORIGEN, POSY_FINAL, CANT_ANDENES, CANT_PUERTAS, CANT_TORNIQU, POSY_MURO_ENTRADA,POSY_MURO_TREN, LISTA_ESTACIONES, TIMERCERRAR, LARGO_ANDEN, POSY_I_TREN
 import numpy as np
 import csv 
 
@@ -34,6 +34,7 @@ class miModelo(Model):
         self.posTrenes = [] #guarda las posiciones de los trenes
         self.trenes = [] #guarda los objetos tren
         self.cronogramaPasajeros = []  #orden y lugar de llegada, junto a destino de pasajeros
+        self.saturacionEstaciones = []
 
         self.posUInteriores = calcularUInteriores() #te calcula todas las posiciones interios del vagón a donde se dirigen los usuarios
         
@@ -72,13 +73,19 @@ class miModelo(Model):
         if self.schedule.get_agent_count()<2:
             self.running = False
         self.contador +=1
-        pasajerosAEntrar = []
-        pasajerosASalir = []
+        self.saturacionEstaciones = []
+        for i in range (0,len(LISTA_ESTACIONES)):
+            pasajero_anden = obtenerPasajerosEnRango(self, i*LARGO_ANDEN,i*LARGO_ANDEN +LARGO_ANDEN, POSY_MURO_TREN,POSY_MURO_ENTRADA)
+            self.saturacionEstaciones.append(pasajero_anden)
+        print("SAT", self.saturacionEstaciones)
+
+        # pasajerosAEntrar = []
+        # pasajerosASalir = []
 
         print("Los pasajeros que han entrado por los accesos son ", self.pasajerosEntraronAccesos)
         print("Los pasajeros que han salido por los accesos son ", self.pasajerosSalieronAccesos)
-        print("Los Pasajeros que han entrado al carro son ", self.pasajerosEntraronCarro)
-        print("Los Pasajeros que han salido del carro son ", self.pasajerosSalieronCarro)
+        # print("Los Pasajeros que han entrado al carro son ", self.pasajerosEntraronCarro)
+        # print("Los Pasajeros que han salido del carro son ", self.pasajerosSalieronCarro)
         print("---- Terminar step ----")
 
     def getAccesosEntrada(self):
@@ -276,7 +283,6 @@ def dibujarTren(modelo,N_Trenes):
 def dibujarNuevosPasajeros(modelo,N_Pasajeros,cont):
     # Dibuja pasajeros entrantes
     for i in range (0,len(modelo.cronogramaPasajeros[cont])):
-        
         # pos_x = (int)(modelo.cronogramaPasajeros[cont][i][0]*LARGO_ANDEN + (LARGO_ANDEN*.7))
         estacionComienzo = modelo.cronogramaPasajeros[cont][i][0]
         pos_x = modelo.random.randint(estacionComienzo*LARGO_ANDEN +1 ,estacionComienzo*LARGO_ANDEN + LARGO_ANDEN - 1)
@@ -296,3 +302,12 @@ def calcularUInteriores():
         i = i + .2
     return lista
 
+def obtenerPasajerosEnRango(modelo,xinicial,xfinal, yinicial,yfinal):
+        totalPasajeros = 0
+        for x in range(xinicial,xfinal + 1):
+            for y in range(yinicial,yfinal):
+                pos = (x,y)
+                pasajeros = modelo.grid.get_neighbors( pos,moore=True, include_center=True,radius=0)
+                pasajeros = [x for x in pasajeros if type(x) is Pasajero]
+                totalPasajeros += len(pasajeros)
+        return totalPasajeros
