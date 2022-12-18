@@ -3,11 +3,8 @@ from mesa import Agent
 import math
 
 #Cada estación se compone de [nombre estación, personas iniciales,personas que ingresan por step, color, capacidad estación]
-#Color 0 = Común , 1 = Verde, 2 = Rojo
-#Aolor 2 = Común , 1 = Verde, 0 = Rojo
-
-LISTA_ESTACIONES = [["Puente Alto",10,15,2,1500],["Las mercedes",10,15,0,1500],["Protectora de la infancia",10,15,1,1500],["Hospital Sotero del Rio",10,15,2,1500],["Elisa Correa",10,15,2,1500],["Los Quillayes",10,15,1,1500],["San José de la Estrella",10,15,0,1500],["Trinidad",10,15,1,1500],["Rojas Magallanes",10,15,0,1500],["Vicente Valdés",10,15,2,1500],["Vicuña Mackenna",10,15,2,1500],["Macul",10,15,2,1500],["Las Torres",10,15,1,1500],["Quilin",10,15,0,1500],["Los Presidentes",10,15,1,1500],["Grecia",10,15,0,1500],["Los Orientales",10,15,1,1500],["Plaza Egaña",10,15,2,1500],["Simón Bolivar",10,15,0,1500],["Principe de Gales",10,15,1,1500],["Francisco Bilbao",10,15,2,1500],["Cristóbal Colón",10,15,0,1500],["Tobalba",10,15,2,1500]]
-
+#Color 2 = Común , 1 = Verde, 0 = Rojo
+LISTA_ESTACIONES = [["Puente Alto",10,15,2,1500],["Las mercedes",10,15,0,1500],["Protectora de la infancia",10,15,1,1500],["Hospital Sotero del Rio",10,15,2,1500],["Elisa Correa",10,15,2,1500],["Los Quillayes",10,15,0,1500],["San José de la Estrella",10,15,1,1500],["Trinidad",10,15,0,1500],["Rojas Magallanes",10,15,1,1500],["Vicente Valdés",10,15,2,1500],["Vicuña Mackenna",10,15,2,1500],["Macul",10,15,2,1500],["Las Torres",10,15,0,1500],["Quilin",10,15,1,1500],["Los Presidentes",10,15,0,1500],["Grecia",10,15,1,1500],["Los Orientales",10,15,0,1500],["Plaza Egaña",10,15,2,1500],["Simón Bolivar",10,15,1,1500],["Principe de Gales",10,15,0,1500],["Francisco Bilbao",10,15,2,1500],["Cristóbal Colón",10,15,1,1500],["Tobalba",10,15,2,1500]]
 LARGO_ANDEN = 150
 POSX_ORIGEN = 0
 POSY_ORIGEN = 0
@@ -27,13 +24,17 @@ POSY_F_TREN = POSY_FINAL - 1
 ANCHO_TREN  = POSY_FINAL - int(math.floor(POSY_FINAL * .8)) -1
 LARGO_TREN  = LARGO_ANDEN - 4
 
+#Cuando no se detiene esta 15 seg pasando por la estacion y 6 ticks en el tunel.
+TIMERSINDETENCION= 1
+TIMERAVANZARSINDETENCION= 7
 #Pasos en los que se abre la puerta
 TIMERABRIR = 2
 #Pasos en los que se cierra la puerta
 TIMERCERRAR = 6
-
+#Pasos en los que está entre estaciones
+TIMERAVANZAR = 12
 CANT_P_PUERTACARRO = 5
-CANT_P_TORNIQUETE = 1
+CANT_P_TORNIQUETE = 3
 
 class Construccion(Agent):
     def __init__(self,model, pos, transitable):
@@ -65,7 +66,6 @@ class Puerta(Construccion):
         self.contador = 0
     def get_pos(self):
         return self.pos
-
 class Pasajero(Agent):
     def __init__(self, model, pos, estacionOrigen, estacionDestino):
         super().__init__(self,model)
@@ -77,6 +77,7 @@ class Pasajero(Agent):
         self.pasoAccesoSalida = False
         self.salioVagon = False
         self.entroVagon = False
+        self.puertaPreferida = self.random.randint(0,23)
 
     def get_position(self):
         return self.pos
@@ -105,11 +106,7 @@ class Pasajero(Agent):
     def elegirPuertaRandom(self,modelo, posPasajero):
         indicePuertas  = math.floor(posPasajero[0]/LARGO_ANDEN)
         puertas = modelo.getPuertas(indicePuertas)
-        index = self.random.randint(0,(len(puertas)-1))
-        return puertas[index] 
-
-    
-
+        return puertas[self.puertaPreferida] 
     # Direccion accesos
     def elegirAcceso(self,modelo, posPasajero, direccion):
         distancias = []
@@ -229,7 +226,7 @@ class Pasajero(Agent):
                 destino = self.obtenerDestino(destinosPosibles,accesoDestino)
             #Dentro de la estacion direccion puerta
             elif self.pos[1] <= POSY_MURO_ENTRADA and self.pos[1] > POSY_MURO_TREN and self.direccion == True: 
-                puertaDestino = self.elegirPuerta(self.model, self.pos)
+                puertaDestino = self.elegirPuertaRandom(self.model, self.pos)
                 destinosPosibles = self.obtenerDestinosPosiblesPuertas(puertaDestino)
                 destino = self.obtenerDestino(destinosPosibles,puertaDestino)
                 
@@ -291,27 +288,56 @@ class Tren(Agent):
         self.contador +=1
         anden  = math.floor(self.pos[0]/LARGO_ANDEN)
         puertas = self.model.puertas[anden]
-        # print("Puertas", anden)
+        colorEstacion = LISTA_ESTACIONES[anden][3]
+        # Si hay detención
+        if(colorEstacion == self.colorRuta or colorEstacion == 2):
+            #Abrir Puertas Tomar pasajeros
+            if self.contador == TIMERABRIR: #and la estacion es la suya
+                # print("T",self.id,": OpenDoor  : ",anden)
+                for puerta_o in puertas:
+                    # print("T",self.id,": O<nDoor  : ",puerta_o.pos)
+                    puerta_o.cerrada =  False
+                # for mod in self.model.puertas:
+                #     for pu in mod:
+                #         print("X", pu.cerrada)
+                
+            # Cerrar Puertas
+            elif self.contador == TIMERCERRAR:
+                print("T",self.id,": CloseDoor : ",anden)
+                for puerta_c in puertas:
+                    puerta_c.cerrada =  True
+                # for mod in self.model.puertas:
+                #     for pu in mod:
+                #         print("X", pu.cerrada)
+            elif self.contador == TIMERAVANZAR:
+                #Captar pasajeros
+                self.pasajeros = self.obtenerPasajerosEnRango((self.pos[0]+2-50),(self.pos[0]+2), 0,POSY_MURO_TREN)
+                print("T",self.id,": Pasajeros : ",len(self.pasajeros))
+                print("T",self.id,": limpieza  : ", (self.pos[0]+2-50) , (self.pos[0]+2))
 
-        #Abrir Puertas Tomar pasajeros
-        if(self.contador == TIMERABRIR) and (LISTA_ESTACIONES[anden][3]%2) == self.colorRuta: #and la estacion es la suya
-            # print("T",self.id,": OpenDoor  : ",anden)
-            for puerta_o in puertas:
-                # print("T",self.id,": O<nDoor  : ",puerta_o.pos)
-                puerta_o.cerrada =  False
-            # for mod in self.model.puertas:
-            #     for pu in mod:
-            #         print("X", pu.cerrada)
+                #Mover tren
+                desplaNuevaEstacion = self.pos[0] + LARGO_ANDEN
+                destino = (desplaNuevaEstacion, self.pos[1])
+                ocup_andensiguiente = self.model.grid.get_neighbors( destino,moore=True, include_center=True,radius=0)
+                tren_andensiguiente = [x for x in ocup_andensiguiente if type(x) is Tren]
+                print(tren_andensiguiente)
+
+                # verificar que no haya tren en el siguiente paso
+                if destino[0] < POSX_FINAL and len(tren_andensiguiente) == 0 : 
+                    # Remover tren y pasajeros de la grilla
+                    total = self.moverPasajerosEnRango((self.pos[0]-LARGO_ANDEN+2), (self.pos[0]+2), 0, POSY_MURO_TREN)
+                    print("LEER x0: ",(self.pos[0]-LARGO_ANDEN+2),"x1: ",(self.pos[0]+2),"y0: ",0,"y1: ",POSY_MURO_TREN)
+                    self.model.grid.move_agent(self,destino)
+                    print("T",self.id,": cantidad  : ",len(total))
+                else: 
+                    print("T",self.id,": Fin Viaje . ")
+                self.contador = 0 
+                
+        #si no hay detencion del tren        
+        elif self.contador == TIMERSINDETENCION:
+            print("T",self.id,"Este tren no se detuvo en la estación")
             
-        # Cerrar Puertas
-        elif self.contador == TIMERCERRAR:
-            print("T",self.id,": CloseDoor : ",anden)
-            for puerta_c in puertas:
-                puerta_c.cerrada =  True
-            # for mod in self.model.puertas:
-            #     for pu in mod:
-            #         print("X", pu.cerrada)
-
+        elif self.contador == TIMERAVANZARSINDETENCION:
             #Captar pasajeros
             self.pasajeros = self.obtenerPasajerosEnRango((self.pos[0]+2-50),(self.pos[0]+2), 0,POSY_MURO_TREN)
             print("T",self.id,": Pasajeros : ",len(self.pasajeros))
@@ -333,10 +359,7 @@ class Tren(Agent):
                 print("T",self.id,": cantidad  : ",len(total))
             else: 
                 print("T",self.id,": Fin Viaje . ")
-            self.contador = 0 
-        
-            self.model.schedule.remove(self)
-            self.model.grid.remove_agent(self)
+            self.contador = 0  
 
     def obtenerPasajerosEnRango(self,xinicial,xfinal, yinicial,yfinal):
         totalPasajeros = []

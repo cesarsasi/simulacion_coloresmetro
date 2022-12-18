@@ -167,7 +167,7 @@ class miModelo(Model):
         return self.posAccesosSalida
 
 def cargarDatos(modelo):
-    with open('viajes.csv', 'r') as f:
+    with open('viajesCompleto.csv', 'r') as f:
         data = list(csv.reader(f, delimiter=","))
 
     dataarray = np.array(data)
@@ -349,7 +349,7 @@ def dibujarTren(modelo,N_Trenes):
 
 def dibujarNuevosPasajeros(modelo,N_Pasajeros,cont):
     # Dibuja pasajeros entrantes
-    for i in range (0,len(modelo.cronogramaPasajeros[cont])):
+    for i in range (0,len(modelo.cronogramaPasajeros[cont])-1):
         # pos_x = (int)(modelo.cronogramaPasajeros[cont][i][0]*LARGO_ANDEN + (LARGO_ANDEN*.7))
         estacionComienzo = modelo.cronogramaPasajeros[cont][i][0]
         pos_x = modelo.random.randint(estacionComienzo*LARGO_ANDEN +1 ,estacionComienzo*LARGO_ANDEN + LARGO_ANDEN - 1)
@@ -360,6 +360,7 @@ def dibujarNuevosPasajeros(modelo,N_Pasajeros,cont):
             a = Pasajero(modelo,(pos_x,pos_y), estacionComienzo, estacionDestino)
             modelo.schedule.add(a)
             modelo.grid.place_agent(a, a.pos)
+    print("---- No quedan más pasajeros por generar. ----")
 
 def calcularUInteriores():
     i = .1

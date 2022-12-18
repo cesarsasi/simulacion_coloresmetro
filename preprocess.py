@@ -1,7 +1,7 @@
 import numpy as np
 import csv 
 
-with open('viajes.csv', 'r') as f:
+with open('viajesCompleto.csv', 'r') as f:
     data = list(csv.reader(f, delimiter=","))
 
 dataarray = np.array(data)
